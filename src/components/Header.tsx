@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { PHONE, PHONE_HREF } from "@/lib/constants";
 
@@ -17,8 +18,17 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-accent-light">
       <div className="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
-        <Link href="/" className="text-primary font-semibold tracking-wide text-lg">
-          CANDLEWOOD CARPENTRY
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/images/logo-header.png"
+            alt="Candlewood Carpentry"
+            width={40}
+            height={40}
+            className="w-10 h-10"
+          />
+          <span className="text-primary font-semibold tracking-wide text-lg">
+            CANDLEWOOD CARPENTRY
+          </span>
         </Link>
 
         {/* Desktop nav */}

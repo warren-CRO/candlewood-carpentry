@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { PHONE, PHONE_HREF, EMAIL } from "@/lib/constants";
 
 const SERVICE_AREAS = [
@@ -14,9 +15,18 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-white font-semibold text-lg mb-3">
-              Candlewood Carpentry
-            </h3>
+            <div className="flex items-center gap-3 mb-3">
+              <Image
+                src="/images/logo.png"
+                alt="Candlewood Carpentry"
+                width={36}
+                height={36}
+                className="w-9 h-9 brightness-0 invert"
+              />
+              <h3 className="text-white font-semibold text-lg">
+                Candlewood Carpentry
+              </h3>
+            </div>
             <p className="text-sm leading-relaxed opacity-80">
               General contractor serving western Connecticut.
               <br />
