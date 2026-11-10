@@ -1,39 +1,114 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #2c1810;
-  --accent: #c4956a;
-  --bg: #f9f6f3;
-  --ink: #2a1f18;
-  --muted: #7a6e63;
-  --cta: #1e3a5f;
-  --cta-hover: #2a4f7a;
-  --accent-light: #e8d5c4;
+  --navy: #0d1f31;
+  --navy-light: #163552;
+  --navy-deep: #091725;
+  --cream: #f4f0e9;
+  --sand: #d5c2a4;
+  --sky: #91b7d9;
+  --sky-muted: #9cc3e4;
+  --line: #d9e0e6;
+  --muted: #667586;
+  --white: #fff;
+  --ink: #18222c;
+  --accent-warm: #ebe3d7;
 }
 
 @theme inline {
-  --color-primary: var(--primary);
-  --color-accent: var(--accent);
-  --color-background: var(--bg);
+  --color-primary: var(--navy);
+  --color-primary-light: var(--navy-light);
+  --color-background: var(--white);
   --color-foreground: var(--ink);
   --color-muted: var(--muted);
-  --color-cta: var(--cta);
-  --color-cta-hover: var(--cta-hover);
-  --color-accent-light: var(--accent-light);
+  --color-cream: var(--cream);
+  --color-sand: var(--sand);
+  --color-sky: var(--sky);
+  --color-sky-muted: var(--sky-muted);
+  --color-line: var(--line);
+  --color-accent-warm: var(--accent-warm);
+  --color-cta: #1e3a5f;
+  --color-cta-hover: #2a4f7a;
 }
 
 body {
-  background: var(--bg);
+  background: var(--white);
   color: var(--ink);
-  font-family: 'Georgia', 'Times New Roman', serif;
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 a {
   transition: color 0.15s ease;
 }
+
+.before-after-slider {
+  position: relative;
+  overflow: hidden;
+  cursor: col-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.before-after-slider img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.before-after-slider .before-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.before-after-slider .slider-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: white;
+  box-shadow: 0 0 12px rgba(0,0,0,0.4);
+  z-index: 10;
+  cursor: col-resize;
+}
+
+.before-after-slider .slider-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.before-after-slider .label {
+  position: absolute;
+  bottom: 16px;
+  padding: 6px 14px;
+  background: rgba(13, 31, 49, 0.85);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  z-index: 5;
+}
+
+.before-after-slider .label-before { left: 16px; }
+.before-after-slider .label-after { right: 16px; }

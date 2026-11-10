@@ -3,105 +3,110 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { PHONE, PHONE_HREF } from "@/lib/constants";
+import { PHONE, PHONE_HREF, EMAIL, COMPANY } from "@/lib/constants";
 
 const NAV = [
-  { label: "Home", href: "/" },
-  { label: "Services", href: "/services" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Services", href: "/#services" },
+  { label: "Gallery", href: "/#gallery" },
+  { label: "About", href: "/#about" },
+  { label: "Contact", href: "/#contact" },
 ];
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-accent-light">
-      <div className="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-3">
-          <Image
-            src="/images/logo-header.png"
-            alt="Candlewood Carpentry"
-            width={40}
-            height={40}
-            className="w-10 h-10"
-          />
-          <span className="text-primary font-semibold tracking-wide text-lg">
-            CANDLEWOOD CARPENTRY
-          </span>
-        </Link>
-
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm text-muted hover:text-primary transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
-          <a
-            href={PHONE_HREF}
-            className="text-sm font-semibold text-cta hover:text-cta-hover"
-          >
-            {PHONE}
-          </a>
-        </nav>
-
-        {/* Mobile menu button */}
-        <button
-          className="md:hidden p-2 text-primary"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            {menuOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
-        </button>
+    <>
+      {/* Top bar */}
+      <div className="bg-[#091725] text-white/75 text-xs">
+        <div className="mx-auto max-w-[1180px] px-5 min-h-[34px] flex items-center justify-between gap-5">
+          <span>Serving the Candlewood Lake area</span>
+          <div className="hidden sm:flex gap-5">
+            <a href={`mailto:${EMAIL}`} className="hover:text-white">
+              {EMAIL}
+            </a>
+            <a href={PHONE_HREF} className="hover:text-white">
+              {PHONE}
+            </a>
+          </div>
+        </div>
       </div>
 
-      {/* Mobile nav */}
-      {menuOpen && (
-        <nav className="md:hidden border-t border-accent-light px-6 py-4 space-y-3 bg-background">
-          {NAV.map((item) => (
+      {/* Main header */}
+      <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-md text-white border-b border-white/8">
+        <div className="mx-auto max-w-[1180px] px-5 min-h-[78px] flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/images/preferred-logo.png"
+              alt={COMPANY}
+              width={50}
+              height={50}
+              className="w-[50px] h-[50px] rounded-full object-cover border border-white/25"
+            />
+            <div>
+              <span className="block font-extrabold text-[17px]">
+                {COMPANY}
+              </span>
+              <span className="block text-[10px] tracking-[1.45px] uppercase text-white/60">
+                Carpentry &bull; Painting &bull; Renovations
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-6 ml-auto">
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-sm font-bold text-white/80 hover:text-white"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <Link
+            href="/#contact"
+            className="hidden md:inline-flex px-4 py-2.5 border border-white/25 rounded-full text-[13px] font-extrabold bg-white/5 hover:bg-white/10 ml-4"
+          >
+            Request an Estimate
+          </Link>
+
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden ml-auto p-2 text-white text-[26px]"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
+
+        {/* Mobile nav */}
+        {menuOpen && (
+          <nav className="md:hidden px-5 py-5 space-y-3 bg-primary border-t border-white/8">
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="block text-white/80 hover:text-white font-bold"
+                onClick={() => setMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
             <Link
-              key={item.href}
-              href={item.href}
-              className="block text-muted hover:text-primary"
+              href="/#contact"
+              className="block text-sky font-bold text-lg"
               onClick={() => setMenuOpen(false)}
             >
-              {item.label}
+              Request an Estimate
             </Link>
-          ))}
-          <a
-            href={PHONE_HREF}
-            className="block font-semibold text-cta text-lg"
-          >
-            Call {PHONE}
-          </a>
-        </nav>
-      )}
-    </header>
+          </nav>
+        )}
+      </header>
+    </>
   );
 }

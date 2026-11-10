@@ -6,15 +6,10 @@ export function FloatingPhoneCTA() {
   return (
     <a
       href={PHONE_HREF}
-      className="fixed bottom-6 right-6 z-50 md:hidden flex items-center justify-center w-14 h-14 rounded-full bg-cta text-white shadow-lg hover:bg-cta-hover active:scale-95 transition-all"
+      className="fixed bottom-6 right-6 z-50 md:hidden flex items-center justify-center w-14 h-14 rounded-full bg-[#0d1f31] text-white shadow-lg active:scale-95 transition-all"
       aria-label="Call Candlewood Carpentry"
     >
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
