@@ -9,7 +9,7 @@ export function ServiceArea() {
           <p className="eyebrow">Service area</p>
           <h2>Working around Candlewood Lake and nearby.</h2>
           <p>
-            Based in New Fairfield, Chad takes on projects in these towns. Not
+            Based in Sherman, Chad takes on projects in these towns. Not
             sure if you are in range? Call{" "}
             <a href={PHONE_HREF} style={{ color: "#fff" }}>
               {PHONE}

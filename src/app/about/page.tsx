@@ -40,7 +40,7 @@ export default function AboutPage() {
             <h2>Yes, that is a carpenter on a water ski.</h2>
             {/* TODO: replace with Chad's real bio (background, years in the trade, why he does this) */}
             <p>
-              {OWNER} runs Candlewood Carpentry LLC from New Fairfield. He
+              {OWNER} runs Candlewood Carpentry LLC from Sherman. He
               handles renovations, kitchen and bath remodels, painting, decks,
               and general carpentry for homeowners around Candlewood Lake.
             </p>

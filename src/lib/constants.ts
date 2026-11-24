@@ -105,7 +105,7 @@ export const TESTIMONIALS = [
     quote:
       "Chad rebuilt our deck from scratch — new framing, composite boards, cable railing. He showed up when he said he would, kept the yard clean, and the finished product looks incredible. Three neighbors have asked for his number.",
     name: "Mike & Sarah T.",
-    location: "New Fairfield, CT",
+    location: "Sherman, CT",
     project: "Full deck rebuild",
   },
   {

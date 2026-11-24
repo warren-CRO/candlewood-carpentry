@@ -69,15 +69,16 @@ const schemaOrg = {
   email: EMAIL,
   address: {
     "@type": "PostalAddress",
-    addressLocality: "New Fairfield",
+    streetAddress: "6 Mary Bee Lane",
+    addressLocality: "Sherman",
     addressRegion: "CT",
-    postalCode: "06812",
+    postalCode: "06784",
     addressCountry: "US",
   },
   geo: {
     "@type": "GeoCoordinates",
-    latitude: 41.4667,
-    longitude: -73.4851,
+    latitude: 41.5793,
+    longitude: -73.4967,
   },
   areaServed: SERVICE_AREAS.map((city) => ({
     "@type": "City",
