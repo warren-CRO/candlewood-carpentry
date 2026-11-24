@@ -9,6 +9,10 @@ const FIELDS = ["name", "phone", "email", "town", "service", "details"] as const
 type Field = (typeof FIELDS)[number];
 type Submission = Record<Field, string>;
 
+const GHL_API = "https://services.leadconnectorhq.com";
+const GHL_API_KEY = process.env.GHL_API_KEY;
+const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
+
 function fail(error: string, status = 400) {
   return NextResponse.json({ success: false, error }, { status });
 }
@@ -22,6 +26,78 @@ function slugify(value: string) {
       .replace(/^-+|-+$/g, "")
       .slice(0, 40) || "lead"
   );
+}
+
+function splitName(full: string): { firstName: string; lastName: string } {
+  const parts = full.trim().split(/\s+/);
+  if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
+async function createGHLContact(submission: Submission): Promise<string | null> {
+  if (!GHL_API_KEY || !GHL_LOCATION_ID) {
+    console.warn("GHL credentials not configured — skipping CRM sync");
+    return null;
+  }
+
+  const { firstName, lastName } = splitName(submission.name);
+
+  const tags = ["lead-source:website"];
+  if (submission.town) tags.push(submission.town.toLowerCase());
+
+  const customFields = [];
+  if (submission.service) {
+    customFields.push({ key: "job_type", field_value: submission.service });
+  }
+
+  const body = {
+    locationId: GHL_LOCATION_ID,
+    firstName,
+    lastName,
+    phone: submission.phone || undefined,
+    email: submission.email || undefined,
+    tags,
+    source: "website form",
+    customFields,
+  };
+
+  try {
+    const res = await fetch(`${GHL_API}/contacts/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${GHL_API_KEY}`,
+        "Content-Type": "application/json",
+        Version: "2021-07-28",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`GHL contact create failed (${res.status}):`, text);
+      return null;
+    }
+
+    const data = await res.json();
+    const contactId = data?.contact?.id;
+
+    if (contactId && submission.details) {
+      await fetch(`${GHL_API}/contacts/${contactId}/notes`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GHL_API_KEY}`,
+          "Content-Type": "application/json",
+          Version: "2021-07-28",
+        },
+        body: JSON.stringify({ body: submission.details }),
+      });
+    }
+
+    return contactId ?? null;
+  } catch (err) {
+    console.error("GHL API error:", err);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -69,7 +145,10 @@ export async function POST(request: NextRequest) {
     return fail("We could not save your request. Please call us instead.", 500);
   }
 
-  // TODO: Forward to GHL webhook when sub-account is provisioned
+  const ghlContactId = await createGHLContact(submission);
+  if (ghlContactId) {
+    console.log(`GHL contact created: ${ghlContactId}`);
+  }
 
   return NextResponse.json({ success: true, id: filename });
 }
