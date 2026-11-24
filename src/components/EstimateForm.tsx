@@ -7,9 +7,11 @@ import { SERVICE_AREAS, SERVICES } from "@/lib/constants";
 export function EstimateForm() {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submitting) return;
     const data = new FormData(e.currentTarget);
     if (data.get("company_website")) return;
     const phone = String(data.get("phone") ?? "").trim();
@@ -19,8 +21,32 @@ export function EstimateForm() {
       return;
     }
     setError("");
-    // TODO: connect to CRM / form handler; currently just routes to the thanks page.
-    router.push("/thanks");
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name") ?? ""),
+          phone,
+          email,
+          town: String(data.get("town") ?? ""),
+          service: String(data.get("service") ?? ""),
+          details: String(data.get("details") ?? ""),
+        }),
+      });
+      const result: { success?: boolean; error?: string } = await res
+        .json()
+        .catch(() => ({}));
+      if (res.ok && result.success) {
+        router.push("/thanks");
+        return;
+      }
+      setError(result.error || "Something went wrong. Please try again or give us a call.");
+    } catch {
+      setError("We couldn't reach the server. Check your connection and try again, or give us a call.");
+    }
+    setSubmitting(false);
   }
 
   return (
@@ -90,8 +116,8 @@ export function EstimateForm() {
           {error}
         </p>
       ) : null}
-      <button type="submit" className="btn">
-        Send Request
+      <button type="submit" className="btn" disabled={submitting}>
+        {submitting ? "Sending..." : "Send Request"}
       </button>
     </form>
   );
