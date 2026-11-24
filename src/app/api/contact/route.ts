@@ -127,10 +127,15 @@ export async function POST(request: NextRequest) {
     return fail("Please include a phone number or an email so Chad can reach you.");
   }
 
+  const ghlContactId = await createGHLContact(submission);
+  if (ghlContactId) {
+    console.log(`GHL contact created: ${ghlContactId}`);
+  }
+
   const receivedAt = new Date().toISOString();
   const stamp = receivedAt.replace(/[:.]/g, "-");
   let filename = `${stamp}_${slugify(submission.name)}.json`;
-  const record = { ...submission, receivedAt, status: "new" as const };
+  const record = { ...submission, receivedAt, status: "new" as const, ghlContactId };
 
   try {
     await mkdir(LEADS_DIR, { recursive: true });
@@ -140,15 +145,14 @@ export async function POST(request: NextRequest) {
       filePath = path.join(LEADS_DIR, filename);
     }
     await writeFile(filePath, JSON.stringify(record, null, 2) + "\n", "utf8");
-  } catch (err) {
-    console.error("Failed to store lead:", err);
+  } catch {
+    // File storage is a local-dev convenience; on serverless (Netlify) the
+    // filesystem is read-only. GHL is the real persistence layer.
+  }
+
+  if (!ghlContactId) {
     return fail("We could not save your request. Please call us instead.", 500);
   }
 
-  const ghlContactId = await createGHLContact(submission);
-  if (ghlContactId) {
-    console.log(`GHL contact created: ${ghlContactId}`);
-  }
-
-  return NextResponse.json({ success: true, id: filename });
+  return NextResponse.json({ success: true, id: ghlContactId });
 }
