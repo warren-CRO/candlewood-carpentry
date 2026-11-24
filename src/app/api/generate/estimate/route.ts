@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server";
+import { generateEstimate, type EstimateInput } from "@/lib/generate-estimate";
+
+export const runtime = "nodejs";
+
+function fail(error: string, status = 400) {
+  return NextResponse.json({ success: false, error }, { status });
+}
+
+export async function POST(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+  const expectedKey = process.env.GHL_API_KEY;
+  if (!expectedKey || authHeader !== `Bearer ${expectedKey}`) {
+    return fail("Unauthorized", 401);
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return fail("Invalid JSON body");
+  }
+
+  const input = body as EstimateInput;
+  if (!input?.client?.name || !input?.project?.type || !input?.project?.scope) {
+    return fail("Missing required fields: client.name, project.type, project.scope");
+  }
+
+  if (input.project.sqft === undefined) {
+    return fail("Missing required field: project.sqft");
+  }
+
+  try {
+    const result = generateEstimate(input);
+    const wantHtml = request.nextUrl.searchParams.get("format") === "html";
+    if (wantHtml) {
+      return new NextResponse(result.html, {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+    return NextResponse.json({ success: true, html: result.html, number: result.number });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Generation failed";
+    return fail(msg, 500);
+  }
+}
