@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
     return fail("Missing required fields: client.name, project.type, project.scope");
   }
 
-  if (input.project.sqft === undefined) {
-    return fail("Missing required field: project.sqft");
+  if (!input.scopeItems?.length && input.project.sqft === undefined) {
+    return fail("Missing required field: project.sqft (or provide scopeItems)");
   }
 
   try {

@@ -6,7 +6,7 @@ export interface InvoiceInput {
     type: string;
     description: string;
   };
-  lineItems: Array<{ description: string; amount: number }>;
+  lineItems: Array<{ description: string; amount: number; total?: number }>;
   payments?: Array<{ date: string; description: string; amount: number }>;
   dueDate?: string;
   notes?: string;
@@ -26,7 +26,7 @@ export function generateInvoice(input: InvoiceInput): { html: string; number: st
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const dueDate = input.dueDate || new Date(Date.now() + 30 * 86400000).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-  const subtotal = input.lineItems.reduce((s, i) => s + i.amount, 0);
+  const subtotal = input.lineItems.reduce((s, i) => s + (i.amount ?? i.total ?? 0), 0);
   const paid = (input.payments || []).reduce((s, p) => s + p.amount, 0);
   const balanceDue = subtotal - paid;
 
@@ -34,7 +34,7 @@ export function generateInvoice(input: InvoiceInput): { html: string; number: st
     .map((item) => `
       <tr>
         <td>${esc(item.description)}</td>
-        <td class="num">${fmt(item.amount)}</td>
+        <td class="num">${fmt(item.amount ?? item.total ?? 0)}</td>
       </tr>`)
     .join("");
 

@@ -40,7 +40,8 @@ export function generateEstimate(input: EstimateInput): { html: string; number: 
     total: s.hours * s.rate,
   }));
 
-  const costs = calculateCosts(input.project.type, input.project.sqft, tier, subs, input.overrides?.total);
+  const sqft = input.project.sqft || 0;
+  const costs = calculateCosts(input.project.type, sqft, tier, subs, input.overrides?.total);
   const docNumber = nextEstimateNumber();
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const timelineWeeks = input.project.timelineWeeks || Math.ceil((pt.typicalWeeks.min + pt.typicalWeeks.max) / 2);
