@@ -12,6 +12,8 @@ type Submission = Record<Field, string>;
 const GHL_API = "https://services.leadconnectorhq.com";
 const GHL_API_KEY = process.env.GHL_API_KEY;
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
+const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID || "w1PnHgnYk1fNhW34ZgYg";
+const GHL_NEW_LEAD_STAGE_ID = process.env.GHL_NEW_LEAD_STAGE_ID || "18f889b0-398b-4afc-917c-9d9c4c1ce532";
 
 function fail(error: string, status = 400) {
   return NextResponse.json({ success: false, error }, { status });
@@ -100,6 +102,49 @@ async function createGHLContact(submission: Submission): Promise<string | null> 
   }
 }
 
+async function createGHLOpportunity(
+  contactId: string,
+  submission: Submission
+): Promise<string | null> {
+  if (!GHL_API_KEY || !GHL_LOCATION_ID) return null;
+
+  const oppName = submission.service
+    ? `${submission.name} — ${submission.service}`
+    : submission.name;
+
+  try {
+    const res = await fetch(`${GHL_API}/opportunities/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${GHL_API_KEY}`,
+        "Content-Type": "application/json",
+        Version: "2021-07-28",
+      },
+      body: JSON.stringify({
+        pipelineId: GHL_PIPELINE_ID,
+        locationId: GHL_LOCATION_ID,
+        name: oppName,
+        pipelineStageId: GHL_NEW_LEAD_STAGE_ID,
+        contactId,
+        status: "open",
+        source: "website form",
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`GHL opportunity create failed (${res.status}):`, text);
+      return null;
+    }
+
+    const data = await res.json();
+    return data?.opportunity?.id ?? null;
+  } catch (err) {
+    console.error("GHL opportunity error:", err);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
@@ -130,6 +175,10 @@ export async function POST(request: NextRequest) {
   const ghlContactId = await createGHLContact(submission);
   if (ghlContactId) {
     console.log(`GHL contact created: ${ghlContactId}`);
+    const oppId = await createGHLOpportunity(ghlContactId, submission);
+    if (oppId) {
+      console.log(`GHL opportunity created: ${oppId}`);
+    }
   }
 
   const receivedAt = new Date().toISOString();
