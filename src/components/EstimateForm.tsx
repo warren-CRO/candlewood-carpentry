@@ -50,7 +50,7 @@ export function EstimateForm() {
   }
 
   return (
-    <form className="form-card" onSubmit={onSubmit} action="/thanks">
+    <form className="form-card" onSubmit={onSubmit}>
       <h2>Request an estimate</h2>
       <div className="field">
         <label htmlFor="name">Name *</label>
