@@ -1,14 +1,41 @@
 import type { Metadata } from "next";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { FloatingPhoneCTA } from "@/components/FloatingPhoneCTA";
-import { PHONE, EMAIL, SERVICE_AREAS, COMPANY, OWNER } from "@/lib/constants";
+import {
+  PHONE,
+  EMAIL,
+  SERVICE_AREAS,
+  COMPANY,
+  OWNER,
+  SERVICES,
+} from "@/lib/constants";
+
+const barlow = Barlow({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-barlow",
+  display: "swap",
+});
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-barlow-condensed",
+  display: "swap",
+});
+
+const SITE_URL = "https://candlewoodcarpentryllc.com";
 
 export const metadata: Metadata = {
-  title:
-    "Candlewood Carpentry LLC | Renovations, Painting & Carpentry in the Candlewood Lake Area",
-  description: `${COMPANY} — renovations, kitchen and bath remodels, decks, interior and exterior painting, and carpentry serving ${SERVICE_AREAS.slice(0, 5).join(", ")}, and surrounding towns in western Connecticut.`,
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default:
+      "Candlewood Carpentry LLC | Renovations, Painting & Carpentry in the Candlewood Lake Area",
+    template: "%s | Candlewood Carpentry LLC",
+  },
+  description: `${COMPANY} — renovations, kitchen and bath remodels, decks, interior and exterior painting, and carpentry serving ${SERVICE_AREAS.join(", ")} in western Connecticut.`,
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -19,20 +46,25 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
+    siteName: COMPANY,
     title: "Candlewood Carpentry LLC | Renovations, Painting & Carpentry",
     description: `Renovations, kitchen and bath remodels, decks, painting, and carpentry in the Candlewood Lake area. ${OWNER}, owner.`,
     images: [{ url: "/images/og-image.png", width: 1200, height: 630 }],
     type: "website",
+    locale: "en_US",
   },
 };
 
 const schemaOrg = {
   "@context": "https://schema.org",
   "@type": "HomeAndConstructionBusiness",
-  "@id": "https://candlewoodcarpentryllc.com/#business",
+  "@id": `${SITE_URL}/#business`,
   name: COMPANY,
-  description: `Renovations, kitchen and bath remodels, decks, interior and exterior painting, and general carpentry serving the Candlewood Lake area in western Connecticut.`,
-  url: "https://candlewoodcarpentryllc.com",
+  description:
+    "Renovations, kitchen and bath remodels, decks, interior and exterior painting, and general carpentry serving the Candlewood Lake area in western Connecticut.",
+  url: SITE_URL,
+  logo: `${SITE_URL}/images/assets/logo-badge.png`,
+  image: `${SITE_URL}/images/og-image.png`,
   telephone: PHONE,
   email: EMAIL,
   address: {
@@ -51,24 +83,16 @@ const schemaOrg = {
     "@type": "City",
     name: `${city}, CT`,
   })),
-  founder: {
-    "@type": "Person",
-    name: OWNER,
-    jobTitle: "Owner",
-  },
+  founder: { "@type": "Person", name: OWNER, jobTitle: "Owner" },
   openingHours: "Mo-Fr 07:00-17:00",
   priceRange: "$$",
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "Services",
-    itemListElement: [
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Home Renovations" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Kitchen & Bath Remodels" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Interior Painting" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Exterior Painting" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Decks & Outdoor Work" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "General Carpentry" } },
-    ],
+    itemListElement: SERVICES.map((s) => ({
+      "@type": "Offer",
+      itemOffered: { "@type": "Service", name: s.title },
+    })),
   },
 };
 
@@ -78,28 +102,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full antialiased scroll-smooth">
+    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&display=swap"
-          rel="stylesheet"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
         />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body>
         <Header />
-        <main className="flex-1">{children}</main>
+        <main>{children}</main>
         <Footer />
-        <FloatingPhoneCTA />
       </body>
     </html>
   );

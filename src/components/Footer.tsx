@@ -1,28 +1,64 @@
-import { PHONE, PHONE_HREF, EMAIL, SERVICE_AREAS, COMPANY, OWNER } from "@/lib/constants";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  PHONE,
+  PHONE_HREF,
+  EMAIL,
+  SERVICE_AREAS,
+  COMPANY,
+  OWNER,
+  SERVICES,
+} from "@/lib/constants";
 
 export function Footer() {
   return (
-    <footer className="bg-[#081522] text-white">
-      <div className="mx-auto max-w-[1180px] px-5 py-7">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-center text-xs text-white/60">
+    <footer className="site-footer">
+      <div className="wrap">
+        <div className="footer-grid">
           <div>
-            <strong className="text-white font-extrabold">{COMPANY}</strong>
-            <br />
-            {OWNER} &bull; Candlewood Lake area
+            <div className="footer-brand">
+              <Image
+                src="/images/assets/logo-badge.png"
+                alt=""
+                width={56}
+                height={56}
+              />
+              <span>Candlewood Carpentry</span>
+            </div>
+            <p>
+              {OWNER}, owner.
+              <br />
+              Serving {SERVICE_AREAS.join(", ")} and the Candlewood Lake area of
+              western Connecticut.
+            </p>
           </div>
           <div>
-            <a href={`mailto:${EMAIL}`} className="text-white font-extrabold hover:underline">
-              {EMAIL}
-            </a>
+            <h3>Services</h3>
+            <ul>
+              {SERVICES.map((s) => (
+                <li key={s.id}>
+                  <Link href={`/services#${s.id}`}>{s.title}</Link>
+                </li>
+              ))}
+            </ul>
           </div>
           <div>
-            <a href={PHONE_HREF} className="text-white font-extrabold hover:underline">
-              {PHONE}
-            </a>
+            <h3>Contact</h3>
+            <ul>
+              <li>
+                <a href={PHONE_HREF}>{PHONE}</a>
+              </li>
+              <li>
+                <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+              </li>
+              <li>
+                <Link href="/contact">Request an estimate</Link>
+              </li>
+            </ul>
           </div>
-          <div className="text-right">
-            &copy; {new Date().getFullYear()} {COMPANY}
-          </div>
+        </div>
+        <div className="footer-legal">
+          &copy; {new Date().getFullYear()} {COMPANY}. All rights reserved.
         </div>
       </div>
     </footer>

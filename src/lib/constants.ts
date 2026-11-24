@@ -6,17 +6,48 @@ export const OWNER = "Chad Colesworthy";
 export const COMPANY = "Candlewood Carpentry LLC";
 
 export const SERVICE_AREAS = [
+  "Danbury",
   "New Fairfield",
   "Brookfield",
-  "Danbury",
   "New Milford",
   "Sherman",
-  "Ridgefield",
-  "Newtown",
-  "Bethel",
-  "Redding",
-  "Roxbury",
 ];
+
+export const SERVICE_DETAILS: Record<
+  string,
+  { icon: string; short: string; bullets: string[] }
+> = {
+  renovations: {
+    icon: "/images/assets/icon-renovations.png",
+    short: "Room updates, repairs, and finish work, from a fresh layout to the fix you have put off for years.",
+    bullets: ["Whole-room updates", "Layout changes", "Repairs and punch lists", "Finish work"],
+  },
+  "kitchen-bath": {
+    icon: "/images/assets/icon-kitchen-bath.png",
+    short: "Updated layouts, cabinetry, and finish work for the rooms that matter most.",
+    bullets: ["Cabinetry and surfaces", "Trim and finish carpentry", "Layout updates", "Renovation support"],
+  },
+  "interior-painting": {
+    icon: "/images/assets/icon-interior-painting.png",
+    short: "Walls, ceilings, trim, and doors with the prep that makes the finish last.",
+    bullets: ["Walls and ceilings", "Trim and doors", "Detailed surface prep", "Clean, finished edges"],
+  },
+  "exterior-painting": {
+    icon: "/images/assets/icon-exterior-painting.png",
+    short: "Siding, shutters, and trim, refreshed and protected for New England weather.",
+    bullets: ["Siding and shutters", "Trim and exterior surfaces", "Scraping and prep", "Weather-aware scheduling"],
+  },
+  decks: {
+    icon: "/images/assets/icon-decks.png",
+    short: "Deck builds, repairs, railings, and stairs built to handle Connecticut winters.",
+    bullets: ["New deck builds", "Repairs and upgrades", "Railings and stairs", "Exterior carpentry"],
+  },
+  carpentry: {
+    icon: "/images/assets/icon-carpentry.png",
+    short: "Trim, finish work, and the practical custom improvements that make a house feel like yours.",
+    bullets: ["Trim and molding", "Punch-list items", "Shelving and built-ins", "Custom improvements"],
+  },
+};
 
 export const SERVICES = [
   {
