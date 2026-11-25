@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 const PROJECT_TYPES: Record<string, string> = {
   "interior-painting": "Interior Painting",
@@ -59,9 +59,246 @@ export default function ToolsPage() {
   );
 }
 
+function VoiceAssistant() {
+  const [listening, setListening] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [result, setResult] = useState<{ action: string; message?: string; html?: string; number?: string; data?: Record<string, unknown> } | null>(null);
+  const [error, setError] = useState("");
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const transcriptRef = useRef("");
+
+  const supported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+  const startListening = useCallback(() => {
+    setError("");
+    setResult(null);
+    setTranscript("");
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError("Voice not supported on this browser. Try Chrome or Safari.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let final = "";
+      let interim = "";
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          final += event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      const text = final || interim;
+      transcriptRef.current = text;
+      setTranscript(text);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      if (transcriptRef.current.trim()) {
+        processTranscript(transcriptRef.current.trim());
+      }
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      setListening(false);
+      if (event.error === "no-speech") {
+        setError("No speech detected. Tap and speak clearly.");
+      } else if (event.error === "not-allowed") {
+        setError("Microphone access denied. Check your browser settings.");
+      } else {
+        setError("Could not hear you. Try again.");
+      }
+    };
+
+    recognition.start();
+    setListening(true);
+  }, []);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+  }, []);
+
+  const processTranscript = useCallback(async (text: string) => {
+    setProcessing(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: text }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setError(data.error || "Could not process. Try again.");
+        setProcessing(false);
+        return;
+      }
+
+      setResult(data);
+
+      if (data.html) {
+        const blob = new Blob([data.html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      }
+    } catch {
+      setError("Something went wrong. Try again.");
+    }
+
+    setProcessing(false);
+  }, []);
+
+  if (!supported) return null;
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      {/* Main voice button */}
+      <button
+        type="button"
+        onClick={listening ? stopListening : startListening}
+        disabled={processing}
+        style={{
+          width: "100%",
+          padding: listening ? "24px" : "28px 24px",
+          borderRadius: "var(--radius)",
+          border: "none",
+          background: listening ? "#a3262a" : "var(--navy)",
+          color: "var(--white)",
+          fontSize: "1.1rem",
+          fontWeight: 700,
+          fontFamily: "var(--font-barlow-condensed), sans-serif",
+          cursor: processing ? "wait" : "pointer",
+          textAlign: "center",
+          letterSpacing: "0.04em",
+          minHeight: 80,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          transition: "background 0.2s",
+        }}
+      >
+        {processing ? (
+          <>
+            <span style={{ fontSize: "1.5rem" }}>&#8987;</span>
+            THINKING...
+          </>
+        ) : listening ? (
+          <>
+            <span style={{ fontSize: "1.5rem", animation: "pulse 1s infinite" }}>&#127908;</span>
+            LISTENING — TAP TO STOP
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: "1.5rem" }}>&#127908;</span>
+            TAP TO TALK
+          </>
+        )}
+      </button>
+
+      {/* Pulsing animation for listening state */}
+      {listening && (
+        <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
+      )}
+
+      {/* Live transcript */}
+      {(listening || transcript) && !result && (
+        <div
+          id="voice-transcript"
+          style={{
+            marginTop: 12,
+            padding: "12px 16px",
+            borderRadius: 12,
+            background: "var(--mist)",
+            color: "var(--ink)",
+            fontSize: "0.95rem",
+            fontStyle: listening ? "italic" : "normal",
+            minHeight: 44,
+          }}
+        >
+          {transcript || (listening ? "Listening..." : "")}
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div style={{ marginTop: 12, padding: "12px 16px", borderRadius: 12, background: "#fef2f2", color: "#a3262a", fontWeight: 500, fontSize: "0.9rem" }}>
+          {error}
+        </div>
+      )}
+
+      {/* Result */}
+      {result && (
+        <div style={{ marginTop: 12, padding: "16px", borderRadius: 12, background: "#f0fff4", border: "1.5px solid #c6f6d5" }}>
+          {result.action === "clarify" && (
+            <p style={{ color: "var(--ink)", fontSize: "0.95rem" }}>{result.message}</p>
+          )}
+          {result.action === "receipt" && (
+            <>
+              <div style={{ fontWeight: 700, color: "#276749", marginBottom: 4 }}>Receipt Logged</div>
+              <p style={{ color: "var(--ink)", fontSize: "0.9rem" }}>
+                {(result.data as Record<string, unknown>)?.store as string || "Store"} — {((result.data as Record<string, unknown>)?.items as Array<Record<string, unknown>>)?.length || 0} item(s)
+              </p>
+            </>
+          )}
+          {result.action === "estimate" && (
+            <>
+              <div style={{ fontWeight: 700, color: "#276749", marginBottom: 4 }}>
+                Estimate {result.number || "Generated"}
+              </div>
+              <p style={{ color: "var(--ink)", fontSize: "0.9rem" }}>
+                {result.html ? "Opened in a new tab. Print or save as PDF." : "Parsed — review the details."}
+              </p>
+            </>
+          )}
+          {result.action === "invoice" && (
+            <>
+              <div style={{ fontWeight: 700, color: "#276749", marginBottom: 4 }}>
+                Invoice {result.number || "Generated"}
+              </div>
+              <p style={{ color: "var(--ink)", fontSize: "0.9rem" }}>
+                {result.html ? "Opened in a new tab. Print or save as PDF." : "Parsed — review the details."}
+              </p>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => { setResult(null); setTranscript(""); }}
+            style={{ marginTop: 10, background: "none", border: "none", color: "var(--navy)", fontWeight: 600, fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
+          >
+            Done
+          </button>
+        </div>
+      )}
+
+      {/* Hint text */}
+      {!listening && !processing && !result && (
+        <p style={{ color: "var(--slate)", fontSize: "0.8rem", marginTop: 8, textAlign: "center" }}>
+          Try: &quot;Log $47 of lumber at Home Depot for the Smith job&quot;
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ToolMenu({ onSelect }: { onSelect: (t: Tool) => void }) {
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      <VoiceAssistant />
       <button type="button" onClick={() => onSelect("estimate")} style={cardBtnStyle}>
         <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#128196;</div>
         <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>New Estimate</div>
