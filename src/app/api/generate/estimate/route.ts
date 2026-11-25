@@ -8,12 +8,6 @@ function fail(error: string, status = 400) {
 }
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  const expectedKey = process.env.GHL_API_KEY;
-  if (!expectedKey || authHeader !== `Bearer ${expectedKey}`) {
-    return fail("Unauthorized", 401);
-  }
-
   let body: unknown;
   try {
     body = await request.json();
