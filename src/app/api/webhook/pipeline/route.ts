@@ -21,6 +21,20 @@ interface WebhookPayload {
   currentStage?: string;
 }
 
+const STAGE_NOTES: Record<string, string> = {
+  "New Lead": "New lead entered the pipeline. Follow up within 24 hours.",
+  "Contacted": "Initial contact made. Qualify the lead and schedule a site visit if appropriate.",
+  "Site Visit Scheduled": "Site visit is on the calendar. Prepare by reviewing project scope notes.",
+  "Estimate Sent": "Estimate delivered to the client. Follow up in 3-5 days if no response.",
+  "Proposal Sent": "Formal proposal sent. This includes payment terms and T&Cs. Follow up in 5-7 days.",
+  "Won / Under Contract": "Job won! Client accepted the proposal. Schedule the work and confirm start date.",
+  "In Progress": "Work is underway. Track progress and communicate any changes to the client.",
+  "Job Complete": "Job finished. Conduct final walkthrough with the client and prepare the invoice.",
+  "Invoice Sent": "Invoice delivered. Payment expected within 30 days per terms.",
+  "Paid": "Payment received. Send a thank-you note and request a Google review.",
+  "Lost": "Opportunity lost. Note the reason for future reference.",
+};
+
 async function addContactNote(contactId: string, note: string): Promise<void> {
   if (!GHL_API_KEY) return;
   try {
@@ -52,19 +66,26 @@ export async function POST(request: NextRequest) {
   }
 
   const stageName = payload.currentStage || "unknown";
+  const previousStage = payload.previousStage || "unknown";
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  const stageGuidance = STAGE_NOTES[stageName] || "";
 
-  console.log(`[pipeline-webhook] ${opp.name} moved to "${stageName}" at ${timestamp}`);
+  console.log(`[pipeline-webhook] ${opp.name} moved from "${previousStage}" to "${stageName}" at ${timestamp}`);
 
-  await addContactNote(
-    opp.contactId,
+  const noteLines = [
     `Pipeline update: moved to "${stageName}" on ${timestamp}`,
-  );
+    previousStage !== "unknown" ? `Previous stage: ${previousStage}` : "",
+    opp.monetaryValue ? `Value: $${opp.monetaryValue.toLocaleString()}` : "",
+    stageGuidance ? `\nNext step: ${stageGuidance}` : "",
+  ].filter(Boolean);
+
+  await addContactNote(opp.contactId, noteLines.join("\n"));
 
   return NextResponse.json({
     success: true,
     action: "noted",
     stage: stageName,
+    previousStage,
     opportunityId: opp.id,
   });
 }
