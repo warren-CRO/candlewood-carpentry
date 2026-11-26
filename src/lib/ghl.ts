@@ -37,7 +37,7 @@ export async function createContact(lead: LeadInfo): Promise<string | null> {
       phone: lead.phone,
       locationId: GHL_LOCATION_ID,
       source: "AI Receptionist",
-      tags: ["inbound-lead", "ai-receptionist"],
+      tags: ["inbound-lead", "ai-receptionist", "followup-pending"],
     }),
   });
 
