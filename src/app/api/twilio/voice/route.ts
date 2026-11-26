@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { twiml, twilioConfigured, isChad } from "@/lib/twilio";
+import { twiml, twilioConfigured, isChad, verifyTwilioRequest } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 
@@ -9,7 +9,15 @@ export async function POST(request: NextRequest) {
   }
 
   const form = await request.formData();
-  const from = (form.get("From") as string) || "";
+  const params: Record<string, string> = {};
+  form.forEach((v, k) => { params[k] = v.toString(); });
+
+  const sig = request.headers.get("x-twilio-signature");
+  if (!verifyTwilioRequest(request.url, params, sig)) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  const from = params["From"] || "";
   const baseUrl = process.env.URL || process.env.DEPLOY_URL || "https://candlewoodcarpentryllc.netlify.app";
 
   if (isChad(from)) {

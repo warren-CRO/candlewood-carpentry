@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { twiml, sendSms, processTranscript, isChad } from "@/lib/twilio";
+import { twiml, sendSms, processTranscript, isChad, verifyTwilioRequest } from "@/lib/twilio";
 import { parseLeadTranscript } from "@/lib/lead-parser";
 import { pushLead } from "@/lib/ghl";
 
@@ -10,9 +10,17 @@ const CHAD_PHONE = "+12034707424";
 
 export async function POST(request: NextRequest) {
   const form = await request.formData();
-  const transcript = (form.get("TranscriptionText") as string) || "";
-  const from = (form.get("From") as string) || "";
-  const status = (form.get("TranscriptionStatus") as string) || "";
+  const params: Record<string, string> = {};
+  form.forEach((v, k) => { params[k] = v.toString(); });
+
+  const sig = request.headers.get("x-twilio-signature");
+  if (!verifyTwilioRequest(request.url, params, sig)) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  const transcript = params["TranscriptionText"] || "";
+  const from = params["From"] || "";
+  const status = params["TranscriptionStatus"] || "";
 
   if (status !== "completed" || !transcript.trim()) {
     return twiml("");

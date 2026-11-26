@@ -1,3 +1,5 @@
+import { createHmac } from "crypto";
+
 const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID || "";
 const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const TWILIO_NUMBER = process.env.TWILIO_PHONE_NUMBER || "";
@@ -9,6 +11,43 @@ export function isChad(from: string): boolean {
 
 export function twilioConfigured(): boolean {
   return !!(TWILIO_SID && TWILIO_TOKEN && TWILIO_NUMBER);
+}
+
+export function validateTwilioSignature(
+  url: string,
+  params: Record<string, string>,
+  signature: string,
+): boolean {
+  if (!TWILIO_TOKEN || !signature) return false;
+
+  const sortedKeys = Object.keys(params).sort();
+  let data = url;
+  for (const key of sortedKeys) {
+    data += key + params[key];
+  }
+
+  const expected = createHmac("sha1", TWILIO_TOKEN)
+    .update(data)
+    .digest("base64");
+
+  return signature === expected;
+}
+
+export function verifyTwilioRequest(
+  requestUrl: string,
+  params: Record<string, string>,
+  signatureHeader: string | null,
+): boolean {
+  if (!signatureHeader) return false;
+
+  const accountSid = params["AccountSid"] || "";
+  if (accountSid && accountSid !== TWILIO_SID) return false;
+
+  const baseUrl = process.env.URL || process.env.DEPLOY_URL || "https://candlewoodcarpentryllc.netlify.app";
+  const path = new URL(requestUrl).pathname;
+  const canonicalUrl = baseUrl + path;
+
+  return validateTwilioSignature(canonicalUrl, params, signatureHeader);
 }
 
 export async function sendSms(to: string, body: string): Promise<boolean> {
