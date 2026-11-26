@@ -52,10 +52,16 @@ async function getContactsByTag(tag: string): Promise<Array<{
   dateAdded: string;
   tags: string[];
 }>> {
-  const res = await fetch(
-    `${GHL_BASE}/contacts/?locationId=${GHL_LOCATION_ID}&query=${encodeURIComponent(tag)}&limit=100`,
-    { headers: ghlHeaders },
-  );
+  const res = await fetch(`${GHL_BASE}/contacts/search`, {
+    method: "POST",
+    headers: ghlHeaders,
+    body: JSON.stringify({
+      locationId: GHL_LOCATION_ID,
+      filters: [{ field: "tags", operator: "contains", value: tag }],
+      pageLimit: 100,
+      page: 1,
+    }),
+  });
 
   if (!res.ok) return [];
 
@@ -69,7 +75,7 @@ async function getContactsByTag(tag: string): Promise<Array<{
     }>;
   };
 
-  return (data.contacts || []).filter((c) => c.tags?.includes(tag));
+  return data.contacts || [];
 }
 
 async function addTag(contactId: string, tag: string): Promise<void> {
