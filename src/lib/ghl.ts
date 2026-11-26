@@ -77,7 +77,7 @@ export async function addToPipeline(
     headers,
     body: JSON.stringify({
       pipelineId: GHL_PIPELINE_ID,
-      stageId: GHL_NEW_LEAD_STAGE_ID,
+      pipelineStageId: GHL_NEW_LEAD_STAGE_ID,
       locationId: GHL_LOCATION_ID,
       name,
       contactId,
