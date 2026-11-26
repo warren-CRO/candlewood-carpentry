@@ -1,6 +1,11 @@
 const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID || "";
 const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const TWILIO_NUMBER = process.env.TWILIO_PHONE_NUMBER || "";
+const CHAD_PHONE = "+12034707424";
+
+export function isChad(from: string): boolean {
+  return from.replace(/\D/g, "").endsWith("2034707424");
+}
 
 export function twilioConfigured(): boolean {
   return !!(TWILIO_SID && TWILIO_TOKEN && TWILIO_NUMBER);
