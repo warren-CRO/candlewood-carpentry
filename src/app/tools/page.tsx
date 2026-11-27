@@ -83,22 +83,23 @@ function VoiceAssistant() {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = "en-US";
     recognitionRef.current = recognition;
+    transcriptRef.current = "";
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let final = "";
+      let accumulated = "";
       let interim = "";
       for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          final += event.results[i][0].transcript;
+          accumulated += event.results[i][0].transcript + " ";
         } else {
           interim += event.results[i][0].transcript;
         }
       }
-      const text = final || interim;
+      const text = (accumulated + interim).trim();
       transcriptRef.current = text;
       setTranscript(text);
     };
