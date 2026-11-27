@@ -69,6 +69,8 @@ function VoiceAssistant() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const stoppingRef = useRef(false);
+  const mimeRef = useRef("audio/webm");
 
   const supported = typeof window !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
 
@@ -77,6 +79,7 @@ function VoiceAssistant() {
     setResult(null);
     setTranscript("");
     chunksRef.current = [];
+    stoppingRef.current = false;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -85,48 +88,72 @@ function VoiceAssistant() {
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : "audio/webm";
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = mediaRecorder;
+      mimeRef.current = mimeType;
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
+      const initRecorder = () => {
+        const mediaRecorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorderRef.current = mediaRecorder;
 
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunksRef.current.push(e.data);
+        };
 
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        if (blob.size < 1000) {
-          setError("No speech detected. Tap and speak clearly.");
-          setListening(false);
-          return;
-        }
+        mediaRecorder.onstop = async () => {
+          if (!stoppingRef.current) {
+            // Browser killed the recorder (silence timeout, tab backgrounding, etc.)
+            // Restart if the stream is still active
+            if (stream.active && stream.getTracks().some((t) => t.readyState === "live")) {
+              const restarted = initRecorder();
+              restarted.start(1000);
+              return;
+            }
+          }
 
-        setTranscript("Transcribing...");
-        setListening(false);
+          stream.getTracks().forEach((t) => t.stop());
+          streamRef.current = null;
 
-        try {
-          const form = new FormData();
-          form.append("audio", blob, "audio.webm");
-          const res = await fetch("/api/transcribe", { method: "POST", body: form });
-          const data = await res.json();
-
-          if (!data.success || !data.text?.trim()) {
-            setTranscript("");
-            setError("Could not hear you. Try again.");
+          const blob = new Blob(chunksRef.current, { type: mimeType });
+          if (blob.size < 1000) {
+            setError("No speech detected. Tap and speak clearly.");
+            setListening(false);
             return;
           }
 
-          setTranscript(data.text);
-          processTranscript(data.text.trim());
-        } catch {
-          setTranscript("");
-          setError("Transcription failed. Try again.");
-        }
+          setTranscript("Transcribing...");
+          setListening(false);
+
+          try {
+            const form = new FormData();
+            form.append("audio", blob, "audio.webm");
+            const res = await fetch("/api/transcribe", { method: "POST", body: form });
+            const data = await res.json();
+
+            if (!data.success || !data.text?.trim()) {
+              setTranscript("");
+              setError("Could not hear you. Try again.");
+              return;
+            }
+
+            setTranscript(data.text);
+            processTranscript(data.text.trim());
+          } catch {
+            setTranscript("");
+            setError("Transcription failed. Try again.");
+          }
+        };
+
+        mediaRecorder.onerror = () => {
+          if (!stoppingRef.current && stream.active) {
+            const restarted = initRecorder();
+            restarted.start(1000);
+          }
+        };
+
+        return mediaRecorder;
       };
 
-      mediaRecorder.start(1000);
+      const recorder = initRecorder();
+      recorder.start(1000);
       setListening(true);
     } catch {
       setError("Microphone access denied. Check your browser settings.");
@@ -134,6 +161,7 @@ function VoiceAssistant() {
   }, []);
 
   const stopListening = useCallback(() => {
+    stoppingRef.current = true;
     mediaRecorderRef.current?.stop();
   }, []);
 
