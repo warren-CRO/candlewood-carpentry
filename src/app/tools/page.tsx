@@ -69,6 +69,7 @@ function VoiceAssistant() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptRef = useRef("");
   const stoppedByUserRef = useRef(false);
+  const fatalErrorRef = useRef(false);
 
   const supported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
@@ -77,6 +78,7 @@ function VoiceAssistant() {
     setResult(null);
     setTranscript("");
     stoppedByUserRef.current = false;
+    fatalErrorRef.current = false;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -107,12 +109,21 @@ function VoiceAssistant() {
     };
 
     recognition.onend = () => {
-      if (stoppedByUserRef.current) {
+      if (stoppedByUserRef.current || fatalErrorRef.current) {
         setListening(false);
         if (transcriptRef.current.trim()) {
           processTranscript(transcriptRef.current.trim());
         }
-      } else {
+        return;
+      }
+      setTimeout(() => {
+        if (stoppedByUserRef.current) {
+          setListening(false);
+          if (transcriptRef.current.trim()) {
+            processTranscript(transcriptRef.current.trim());
+          }
+          return;
+        }
         try {
           recognition.start();
         } catch {
@@ -121,22 +132,13 @@ function VoiceAssistant() {
             processTranscript(transcriptRef.current.trim());
           }
         }
-      }
+      }, 100);
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === "not-allowed") {
-        setListening(false);
+        fatalErrorRef.current = true;
         setError("Microphone access denied. Check your browser settings.");
-      } else if (event.error === "no-speech") {
-        // Browser timed out waiting for speech — restart silently
-        if (!stoppedByUserRef.current) {
-          try {
-            recognition.start();
-          } catch {
-            setListening(false);
-          }
-        }
       }
     };
 
