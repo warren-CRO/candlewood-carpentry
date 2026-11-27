@@ -107,6 +107,22 @@ export default function GuidePage() {
       </Section>
 
       <Section
+        icon="&#128188;"
+        title="Jobs &amp; Profitability"
+        subtitle="Track expenses and margins on every job"
+      >
+        <p>Open <a href="/jobs" style={{ color: "var(--navy)", fontWeight: 600 }}>Jobs</a> to see all your active jobs from the pipeline. Tap any job to:</p>
+        <ul>
+          <li><strong>Log expenses</strong> — materials, subcontractor costs, permits, anything you spend</li>
+          <li><strong>See profitability</strong> — revenue vs. expenses, profit, and margin percentage</li>
+        </ul>
+        <p>The <a href="/dashboard" style={{ color: "var(--navy)", fontWeight: 600 }}>Dashboard</a> shows the big picture: total pipeline value, revenue, expenses, net profit, and average margin across all your jobs.</p>
+        <Callout>
+          Log expenses as you go — every receipt you scan or cost you incur should be logged to the job. The more you track, the more accurate your margins.
+        </Callout>
+      </Section>
+
+      <Section
         icon="&#128200;"
         title="Sales Pipeline (GoHighLevel)"
         subtitle="Track every lead from call to payment"

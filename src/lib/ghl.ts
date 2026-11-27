@@ -100,3 +100,129 @@ export async function pushLead(lead: LeadInfo): Promise<void> {
     addToPipeline(contactId, `${lead.name} — ${lead.need}`),
   ]);
 }
+
+export const PIPELINE_STAGES: Record<string, string> = {
+  "18f889b0-398b-4afc-917c-9d9c4c1ce532": "New Lead",
+  "bc15dd1d-fe1c-4661-8c16-e09acfc42a72": "Contacted",
+  "898b1e72-a224-43b7-b2ef-2109963a980c": "Site Visit Scheduled",
+  "c9cbc648-8813-438b-9505-669d704dab94": "Estimate Sent",
+  "441065be-022d-4b50-b195-2eac1ce6f783": "Proposal Sent",
+  "won-under-contract": "Won / Under Contract",
+  "in-progress": "In Progress",
+  "job-complete": "Job Complete",
+  "invoice-sent": "Invoice Sent",
+  "paid": "Paid",
+  "lost": "Lost",
+};
+
+export interface Opportunity {
+  id: string;
+  name: string;
+  status: string;
+  pipelineStageId: string;
+  stageName: string;
+  monetaryValue: number;
+  contactId: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getOpportunities(status: "open" | "won" | "lost" | "abandoned" | "all" = "all"): Promise<Opportunity[]> {
+  if (!ghlConfigured()) return [];
+
+  const params = new URLSearchParams({
+    location_id: GHL_LOCATION_ID,
+    pipeline_id: GHL_PIPELINE_ID,
+    limit: "100",
+  });
+  if (status !== "all") params.set("status", status);
+
+  const res = await fetch(`${GHL_BASE}/opportunities/search?${params}`, { headers });
+  if (!res.ok) return [];
+
+  const data = (await res.json()) as {
+    opportunities: Array<{
+      id: string;
+      name: string;
+      status: string;
+      pipelineStageId: string;
+      monetaryValue: number;
+      contact: { id: string; name: string; phone: string; email: string };
+      createdAt: string;
+      updatedAt: string;
+    }>;
+  };
+
+  return (data.opportunities || []).map((o) => ({
+    id: o.id,
+    name: o.name,
+    status: o.status,
+    pipelineStageId: o.pipelineStageId,
+    stageName: PIPELINE_STAGES[o.pipelineStageId] || "Unknown",
+    monetaryValue: o.monetaryValue || 0,
+    contactId: o.contact?.id || "",
+    contactName: o.contact?.name || "",
+    contactPhone: o.contact?.phone || "",
+    contactEmail: o.contact?.email || "",
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  }));
+}
+
+export async function getOpportunity(id: string): Promise<Opportunity | null> {
+  if (!ghlConfigured()) return null;
+
+  const res = await fetch(`${GHL_BASE}/opportunities/${id}`, { headers });
+  if (!res.ok) return null;
+
+  const o = (await res.json()) as {
+    id: string;
+    name: string;
+    status: string;
+    pipelineStageId: string;
+    monetaryValue: number;
+    contact: { id: string; name: string; phone: string; email: string };
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  return {
+    id: o.id,
+    name: o.name,
+    status: o.status,
+    pipelineStageId: o.pipelineStageId,
+    stageName: PIPELINE_STAGES[o.pipelineStageId] || "Unknown",
+    monetaryValue: o.monetaryValue || 0,
+    contactId: o.contact?.id || "",
+    contactName: o.contact?.name || "",
+    contactPhone: o.contact?.phone || "",
+    contactEmail: o.contact?.email || "",
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  };
+}
+
+export async function getNotes(contactId: string): Promise<Array<{ id: string; body: string; dateAdded: string }>> {
+  if (!ghlConfigured()) return [];
+
+  const res = await fetch(`${GHL_BASE}/contacts/${contactId}/notes/`, { headers });
+  if (!res.ok) return [];
+
+  const data = (await res.json()) as { notes: Array<{ id: string; body: string; dateAdded: string }> };
+  return data.notes || [];
+}
+
+export async function updateOpportunityValue(oppId: string, value: number): Promise<boolean> {
+  if (!ghlConfigured()) return false;
+
+  const res = await fetch(`${GHL_BASE}/opportunities/${oppId}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ monetaryValue: value }),
+  });
+
+  return res.ok;
+}

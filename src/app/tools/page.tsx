@@ -328,6 +328,20 @@ function ToolMenu({ onSelect }: { onSelect: (t: Tool) => void }) {
           Photograph a receipt and split costs across jobs.
         </div>
       </a>
+      <a href="/jobs" style={{ ...cardBtnStyle, textDecoration: "none", display: "block" }}>
+        <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#128188;</div>
+        <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>Jobs</div>
+        <div style={{ fontSize: "0.85rem", color: "var(--slate)", marginTop: 4 }}>
+          Track active jobs, log expenses, and see profitability.
+        </div>
+      </a>
+      <a href="/dashboard" style={{ ...cardBtnStyle, textDecoration: "none", display: "block" }}>
+        <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#128200;</div>
+        <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>Dashboard</div>
+        <div style={{ fontSize: "0.85rem", color: "var(--slate)", marginTop: 4 }}>
+          Pipeline value, revenue, expenses, and margins at a glance.
+        </div>
+      </a>
       <a href="/guide" style={{ ...cardBtnStyle, textDecoration: "none", display: "block", background: "var(--mist, #f5f7fa)" }}>
         <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#128214;</div>
         <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>System Guide</div>
