@@ -68,6 +68,7 @@ function VoiceAssistant() {
   const [error, setError] = useState("");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptRef = useRef("");
+  const stoppedByUserRef = useRef(false);
 
   const supported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
@@ -75,6 +76,7 @@ function VoiceAssistant() {
     setError("");
     setResult(null);
     setTranscript("");
+    stoppedByUserRef.current = false;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -105,20 +107,36 @@ function VoiceAssistant() {
     };
 
     recognition.onend = () => {
-      setListening(false);
-      if (transcriptRef.current.trim()) {
-        processTranscript(transcriptRef.current.trim());
+      if (stoppedByUserRef.current) {
+        setListening(false);
+        if (transcriptRef.current.trim()) {
+          processTranscript(transcriptRef.current.trim());
+        }
+      } else {
+        try {
+          recognition.start();
+        } catch {
+          setListening(false);
+          if (transcriptRef.current.trim()) {
+            processTranscript(transcriptRef.current.trim());
+          }
+        }
       }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      setListening(false);
-      if (event.error === "no-speech") {
-        setError("No speech detected. Tap and speak clearly.");
-      } else if (event.error === "not-allowed") {
+      if (event.error === "not-allowed") {
+        setListening(false);
         setError("Microphone access denied. Check your browser settings.");
-      } else {
-        setError("Could not hear you. Try again.");
+      } else if (event.error === "no-speech") {
+        // Browser timed out waiting for speech — restart silently
+        if (!stoppedByUserRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setListening(false);
+          }
+        }
       }
     };
 
@@ -127,6 +145,7 @@ function VoiceAssistant() {
   }, []);
 
   const stopListening = useCallback(() => {
+    stoppedByUserRef.current = true;
     recognitionRef.current?.stop();
   }, []);
 
