@@ -21,7 +21,7 @@ const PROJECT_TYPES: Record<string, string> = {
   "general-carpentry": "General Carpentry",
 };
 
-type Tool = "menu" | "estimate" | "invoice";
+type Tool = "menu" | "estimate" | "proposal" | "invoice";
 
 interface LineItem {
   id: string;
@@ -49,11 +49,12 @@ export default function ToolsPage() {
     <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px 120px" }}>
       <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.4rem)", marginBottom: 4 }}>Tools</h1>
       <p style={{ color: "var(--slate)", marginBottom: 24, fontSize: "0.95rem" }}>
-        Generate estimates and invoices for your jobs.
+        Generate estimates, proposals, and invoices for your jobs.
       </p>
 
       {tool === "menu" && <ToolMenu onSelect={setTool} />}
       {tool === "estimate" && <EstimateForm onBack={() => setTool("menu")} />}
+      {tool === "proposal" && <ProposalForm onBack={() => setTool("menu")} />}
       {tool === "invoice" && <InvoiceForm onBack={() => setTool("menu")} />}
     </div>
   );
@@ -306,6 +307,13 @@ function ToolMenu({ onSelect }: { onSelect: (t: Tool) => void }) {
           Create a professional estimate with pricing for a client.
         </div>
       </button>
+      <button type="button" onClick={() => onSelect("proposal")} style={cardBtnStyle}>
+        <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#128221;</div>
+        <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>New Proposal</div>
+        <div style={{ fontSize: "0.85rem", color: "var(--slate)", marginTop: 4 }}>
+          Create a full proposal with cost breakdown, payment schedule, and terms.
+        </div>
+      </button>
       <button type="button" onClick={() => onSelect("invoice")} style={cardBtnStyle}>
         <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#128176;</div>
         <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>New Invoice</div>
@@ -318,6 +326,13 @@ function ToolMenu({ onSelect }: { onSelect: (t: Tool) => void }) {
         <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>Receipt Scanner</div>
         <div style={{ fontSize: "0.85rem", color: "var(--slate)", marginTop: 4 }}>
           Photograph a receipt and split costs across jobs.
+        </div>
+      </a>
+      <a href="/guide" style={{ ...cardBtnStyle, textDecoration: "none", display: "block", background: "var(--mist, #f5f7fa)" }}>
+        <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#128214;</div>
+        <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)" }}>System Guide</div>
+        <div style={{ fontSize: "0.85rem", color: "var(--slate)", marginTop: 4 }}>
+          How everything works — phone, leads, tools, pipeline.
         </div>
       </a>
     </div>
@@ -628,6 +643,149 @@ function InvoiceForm({ onBack }: { onBack: () => void }) {
         style={{ ...primaryBtnStyle, marginTop: 24, opacity: !canGenerate || generating ? 0.4 : 1 }}
       >
         {generating ? "Generating..." : "Generate Invoice"}
+      </button>
+    </>
+  );
+}
+
+function ProposalForm({ onBack }: { onBack: () => void }) {
+  const [clientName, setClientName] = useState("");
+  const [clientAddress, setClientAddress] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [projectType, setProjectType] = useState("general-carpentry");
+  const [scope, setScope] = useState("");
+  const [sqft, setSqft] = useState("");
+  const [tier, setTier] = useState("Mid-Range");
+  const [timelineWeeks, setTimelineWeeks] = useState("");
+  const [specialConditions, setSpecialConditions] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGenerate = useCallback(async () => {
+    if (!clientName.trim() || !scope.trim() || !sqft.trim()) return;
+
+    setGenerating(true);
+    setError("");
+
+    const body = {
+      client: {
+        name: clientName.trim(),
+        address: clientAddress.trim(),
+        ...(clientPhone.trim() && { phone: clientPhone.trim() }),
+        ...(clientEmail.trim() && { email: clientEmail.trim() }),
+      },
+      project: {
+        type: projectType,
+        scope: scope.trim(),
+        sqft: parseNum(sqft),
+        materialsTier: tier,
+        ...(timelineWeeks.trim() && { timelineWeeks: parseInt(timelineWeeks) }),
+        ...(specialConditions.trim() && { specialConditions: specialConditions.trim() }),
+      },
+    };
+
+    try {
+      const res = await fetch("/api/generate/proposal?format=html", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError((data as Record<string, string>).error || "Failed to generate proposal");
+        setGenerating(false);
+        return;
+      }
+
+      const html = await res.text();
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch {
+      setError("Something went wrong. Try again.");
+    }
+
+    setGenerating(false);
+  }, [clientName, clientAddress, clientPhone, clientEmail, projectType, scope, sqft, tier, timelineWeeks, specialConditions]);
+
+  const canGenerate = clientName.trim() && scope.trim() && sqft.trim();
+
+  return (
+    <>
+      <button type="button" onClick={onBack} style={backBtnStyle}>&larr; Back</button>
+      <h2 style={{ fontSize: "1.4rem", marginBottom: 16 }}>New Proposal</h2>
+      <p style={{ color: "var(--slate)", fontSize: "0.85rem", marginBottom: 20 }}>
+        Full proposal with cost breakdown, payment schedule (50/25/25), timeline, and terms. Opens as a printable page.
+      </p>
+
+      <SectionLabel>Client Info</SectionLabel>
+      <input type="text" placeholder="Client name *" value={clientName} onChange={(e) => setClientName(e.target.value)} style={{ ...inputStyle, marginBottom: 10 }} />
+      <input type="text" placeholder="Address *" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} style={{ ...inputStyle, marginBottom: 10 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+        <input type="tel" placeholder="Phone" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} style={inputStyle} />
+        <input type="email" placeholder="Email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} style={inputStyle} />
+      </div>
+
+      <SectionLabel>Project</SectionLabel>
+      <select value={projectType} onChange={(e) => setProjectType(e.target.value)} style={{ ...inputStyle, marginBottom: 10 }}>
+        {Object.entries(PROJECT_TYPES).map(([k, v]) => (
+          <option key={k} value={k}>{v}</option>
+        ))}
+      </select>
+      <textarea
+        placeholder="Scope of work — describe what you'll do *"
+        value={scope}
+        onChange={(e) => setScope(e.target.value)}
+        rows={4}
+        style={{ ...inputStyle, marginBottom: 10, resize: "vertical" }}
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <div>
+          <label style={smallLabelStyle}>Square footage *</label>
+          <input type="number" inputMode="numeric" placeholder="e.g. 200" value={sqft} onChange={(e) => setSqft(e.target.value)} style={inputStyle} />
+        </div>
+        <div>
+          <label style={smallLabelStyle}>Materials tier</label>
+          <select value={tier} onChange={(e) => setTier(e.target.value)} style={inputStyle}>
+            <option value="Standard">Standard</option>
+            <option value="Mid-Range">Mid-Range</option>
+            <option value="Premium">Premium</option>
+          </select>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <div>
+          <label style={smallLabelStyle}>Timeline (weeks)</label>
+          <input type="number" inputMode="numeric" placeholder="Auto-estimated" value={timelineWeeks} onChange={(e) => setTimelineWeeks(e.target.value)} style={inputStyle} />
+        </div>
+        <div>
+          <label style={smallLabelStyle}>Special conditions</label>
+          <input type="text" placeholder="e.g. lead paint, steep slope" value={specialConditions} onChange={(e) => setSpecialConditions(e.target.value)} style={inputStyle} />
+        </div>
+      </div>
+
+      <div style={{ background: "var(--mist, #f5f7fa)", borderRadius: 12, padding: 16, marginTop: 16, fontSize: "0.85rem", color: "var(--slate)" }}>
+        <strong style={{ color: "var(--ink, #1a1a1a)" }}>What the proposal includes:</strong>
+        <ul style={{ margin: "8px 0 0", paddingLeft: 20, lineHeight: 1.8 }}>
+          <li>Itemized cost breakdown (materials, labor, subs, markup)</li>
+          <li>Payment schedule: 50% deposit, 25% midpoint, 25% completion</li>
+          <li>Estimated timeline</li>
+          <li>Terms &amp; conditions (10 clauses)</li>
+          <li>Signature lines for contractor and client</li>
+        </ul>
+      </div>
+
+      {error && <div style={errorStyle}>{error}</div>}
+
+      <button
+        type="button"
+        onClick={handleGenerate}
+        disabled={!canGenerate || generating}
+        style={{ ...primaryBtnStyle, marginTop: 24, opacity: !canGenerate || generating ? 0.4 : 1 }}
+      >
+        {generating ? "Generating..." : "Generate Proposal"}
       </button>
     </>
   );
